@@ -33,6 +33,7 @@ import co.rsk.peg.BridgeState;
 import co.rsk.peg.BridgeStateReader;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.map.HashedMap;
+import org.ethereum.config.blockchain.DevNetConfig;
 import org.ethereum.config.blockchain.RegTestConfig;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
@@ -123,7 +124,8 @@ public class Web3Impl implements Web3 {
         this.eth.addListener(compositeEthereumListener);
 
         // TODO adding default accounts, just so that integration tests pass
-        if (properties.getBlockchainConfig() instanceof RegTestConfig) {
+        if (properties.getBlockchainConfig() instanceof RegTestConfig ||
+            properties.getBlockchainConfig() instanceof DevNetConfig) {
             personal_newAccountWithSeed("cow");
         }
 
