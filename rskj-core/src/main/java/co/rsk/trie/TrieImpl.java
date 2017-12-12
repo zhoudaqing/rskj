@@ -137,8 +137,9 @@ public class TrieImpl implements Trie {
 
     // full constructor
     private TrieImpl(int arity, byte[] encodedSharedPath, int sharedPathLength, byte[] value, TrieImpl[] nodes, byte[][] hashes, TrieStore store) {
-        if (arity != 2 && arity != 4 && arity != 16)
+        if (arity != 2 && arity != 4 && arity != 16) {
             throw new IllegalArgumentException(INVALID_ARITY);
+        }
 
         this.arity = arity;
         this.value = value;
@@ -168,10 +169,13 @@ public class TrieImpl implements Trie {
 
     @Override
     public void removeNode(int position) {
-        if (this.nodes != null)
+        if (this.nodes != null) {
             this.nodes[position] = null;
-        if (this.hashes != null)
+        }
+
+        if (this.hashes != null) {
             this.hashes[position] = null;
+        }
     }
 
     @Override
@@ -192,15 +196,17 @@ public class TrieImpl implements Trie {
      * @param store     the store containing the rest of the trie nodes, to be used on retrieve them if they are needed in memory
      */
     public static TrieImpl fromMessage(byte[] message, TrieStore store) {
-        if (message == null)
+        if (message == null) {
             return null;
+        }
 
         return fromMessage(message, 0, message.length, store);
     }
 
     private static TrieImpl fromMessage(byte[] message, int position, int msglength, TrieStore store) {
-        if (message == null)
+        if (message == null) {
             return null;
+        }
 
         ByteArrayInputStream bstream = new ByteArrayInputStream(message, position, msglength);
         DataInputStream istream = new DataInputStream(bstream);
@@ -227,12 +233,15 @@ public class TrieImpl implements Trie {
             byte[][] hashes = new byte[arity][];
 
             for (int k = 0; k < arity; k++) {
-                if ((bhashes & (1 << k)) == 0)
+                if ((bhashes & (1 << k)) == 0) {
                     continue;
+                }
+
                 hashes[k] = new byte[SHA3Helper.DEFAULT_SIZE_BYTES];
 
-                if (istream.read(hashes[k]) != SHA3Helper.DEFAULT_SIZE_BYTES)
+                if (istream.read(hashes[k]) != SHA3Helper.DEFAULT_SIZE_BYTES) {
                     throw new EOFException();
+                }
 
                 nhashes++;
             }
@@ -243,8 +252,9 @@ public class TrieImpl implements Trie {
             if (hasLongVal) {
                 byte[] valueHash = new byte[SHA3Helper.DEFAULT_SIZE_BYTES];
 
-                if (istream.read(valueHash) != SHA3Helper.DEFAULT_SIZE_BYTES)
+                if (istream.read(valueHash) != SHA3Helper.DEFAULT_SIZE_BYTES) {
                     throw new EOFException();
+                }
 
                 value = store.retrieveValue(valueHash);
             }
@@ -253,15 +263,17 @@ public class TrieImpl implements Trie {
 
                 if (lvalue > 0) {
                     value = new byte[lvalue];
-                    if (istream.read(value) != lvalue)
+                    if (istream.read(value) != lvalue) {
                         throw new EOFException();
+                    }
                 }
             }
 
             TrieImpl trie = new TrieImpl(arity, encodedSharedPath, lshared, value, null, hashes, store).withSecure(isSecure);
 
-            if (store != null)
+            if (store != null) {
                 trie.saved = true;
+            }
 
             return trie;
         } catch (IOException ex) {
@@ -290,11 +302,13 @@ public class TrieImpl implements Trie {
      */
     @Override
     public byte[] getHash() {
-        if (this.hash != null)
+        if (this.hash != null) {
             return ByteUtils.clone(this.hash);
+        }
 
-        if (isEmptyTrie(this.value, this.nodes, this.hashes))
+        if (isEmptyTrie(this.value, this.nodes, this.hashes)) {
             return ByteUtils.clone(emptyHash);
+        }
 
         byte[] message = this.toMessage();
 
@@ -325,30 +339,35 @@ public class TrieImpl implements Trie {
     private PartialMerkleTree getPartialMerkleTree(byte[] key, int length, int keyPosition) {
         int position = keyPosition;
 
-        if (position >= length)
+        if (position >= length) {
             return new PartialMerkleTree(this);
+        }
 
         if (this.encodedSharedPath != null) {
             byte[] sharedPath = decodePath(this.encodedSharedPath, this.arity, this.sharedPathLength);
 
             for (int k = 0; k < sharedPath.length; k++, position++) {
-                if (position >= length)
+                if (position >= length) {
                     return null;
+                }
 
-                if (key[position] != sharedPath[k])
+                if (key[position] != sharedPath[k]) {
                     return null;
+                }
             }
 
-            if (position >= length)
+            if (position >= length) {
                 return new PartialMerkleTree(this);
+            }
         }
 
         int pos = key[position];
 
         Trie node = this.retrieveNode(pos);
 
-        if (node == null)
+        if (node == null) {
             return null;
+        }
 
         PartialMerkleTree tree = ((TrieImpl)node).getPartialMerkleTree(key, length, position + 1);
 
@@ -452,8 +471,9 @@ public class TrieImpl implements Trie {
         for (int k = 0; k < this.arity; k++) {
             byte[] nodeHash = this.getHash(k);
 
-            if (nodeHash == null)
+            if (nodeHash == null) {
                 continue;
+            }
 
             bits |= 1 << k;
         }
@@ -465,14 +485,16 @@ public class TrieImpl implements Trie {
         buffer.putShort((short) bits);
         buffer.putShort((short) lshared);
 
-        if (lshared > 0)
+        if (lshared > 0) {
             buffer.put(encodedSharedPath);
+        }
 
         for (int k = 0; k < this.arity; k++) {
             byte[] nodeHash = this.getHash(k);
 
-            if (nodeHash == null)
+            if (nodeHash == null) {
                 continue;
+            }
 
             buffer.put(nodeHash);
         }
@@ -495,13 +517,17 @@ public class TrieImpl implements Trie {
      */
     @Override
     public void save() {
-        if (this.saved)
+        if (this.saved) {
             return;
+        }
 
-        if (this.nodes != null)
-            for (TrieImpl node : this.nodes)
-                if (node != null)
+        if (this.nodes != null) {
+            for (TrieImpl node : this.nodes) {
+                if (node != null) {
                     node.save();
+                }
+            }
+        }
 
         this.store.save(this);
         this.saved = true;
@@ -519,8 +545,9 @@ public class TrieImpl implements Trie {
         for (int k = 0; k < this.arity; k++) {
             Trie node = this.retrieveNode(k);
 
-            if (node != null)
+            if (node != null) {
                 size += node.trieSize();
+            }
         }
 
         return size;
@@ -540,28 +567,33 @@ public class TrieImpl implements Trie {
     private byte[] get(byte[] key, int length, int keyPosition) {
         int position = keyPosition;
 
-        if (position >= length)
+        if (position >= length) {
             return this.value;
+        }
 
         if (this.encodedSharedPath != null) {
             byte[] sharedPath = decodePath(this.encodedSharedPath, this.arity, this.sharedPathLength);
 
             for (int k = 0; k < sharedPath.length; k++, position++) {
-                if (position >= length)
+                if (position >= length) {
                     return null;
+                }
 
-                if (key[position] != sharedPath[k])
+                if (key[position] != sharedPath[k]) {
                     return null;
+                }
             }
 
-            if (position >= length)
+            if (position >= length) {
                 return this.value;
+            }
         }
 
         Trie node = this.retrieveNode(key[position]);
 
-        if (node == null)
+        if (node == null) {
             return null;
+        }
 
         return ((TrieImpl)node).get(key, length, position + 1);
     }
@@ -581,8 +613,9 @@ public class TrieImpl implements Trie {
             TrieImpl node = this.getNode(k);
             byte[] localHash = this.getHash(k);
 
-            if (node != null && !isEmptyTrie(node.value, node.nodes, node.hashes) || localHash != null)
+            if (node != null && !isEmptyTrie(node.value, node.nodes, node.hashes) || localHash != null) {
                 count++;
+            }
         }
 
         return count;
@@ -599,16 +632,19 @@ public class TrieImpl implements Trie {
     private Trie retrieveNode(int n) {
         Trie node = this.getNode(n);
 
-        if (node != null)
+        if (node != null) {
             return node;
+        }
 
-        if (this.hashes == null)
+        if (this.hashes == null) {
             return null;
+        }
 
         byte[] localHash = this.hashes[n];
 
-        if (localHash == null)
+        if (localHash == null) {
             return null;
+        }
 
         node = this.store.retrieve(localHash);
 
@@ -619,8 +655,9 @@ public class TrieImpl implements Trie {
             throw new TrieSerializationException(ERROR_NON_EXISTENT_TRIE + " " + strHash, null);
         }
 
-        if (this.nodes == null)
+        if (this.nodes == null) {
             this.nodes = new TrieImpl[this.arity];
+        }
 
         this.nodes[n] = (TrieImpl)node;
 
@@ -637,16 +674,19 @@ public class TrieImpl implements Trie {
      */
     @Nullable
     private byte[] getHash(int n) {
-        if (this.hashes != null && this.hashes[n] != null)
+        if (this.hashes != null && this.hashes[n] != null) {
             return this.hashes[n];
+        }
 
-        if (this.nodes == null || this.nodes[n] == null)
+        if (this.nodes == null || this.nodes[n] == null) {
             return null;
+        }
 
         TrieImpl node = this.nodes[n];
 
-        if (isEmptyTrie(node.value, node.nodes, node.hashes))
+        if (isEmptyTrie(node.value, node.nodes, node.hashes)) {
             return null;
+        }
 
         byte[] localHash = node.getHash();
 
@@ -663,8 +703,9 @@ public class TrieImpl implements Trie {
      */
     @Override
     public void setHash(int n, byte[] hash) {
-        if (this.hashes == null)
+        if (this.hashes == null) {
             this.hashes = new byte[this.arity][];
+        }
 
         this.hashes[n] = hash;
     }
@@ -698,14 +739,16 @@ public class TrieImpl implements Trie {
         for (int k = 0; k < this.arity; k++) {
             TrieImpl subnode = this.getNode(k);
 
-            if (subnode != null)
+            if (subnode != null) {
                 subnodes.add(subnode.serializeTrie());
+            }
         }
 
         int totalSize = message.length;
 
-        for (byte[] sn : subnodes)
+        for (byte[] sn : subnodes) {
             totalSize += sn.length;
+        }
 
         ByteBuffer buffer = ByteBuffer.allocate(SERIALIZATION_HEADER_LENGTH + totalSize);
 
@@ -716,8 +759,9 @@ public class TrieImpl implements Trie {
 
         buffer.put(message);
 
-        for (byte[] sn : subnodes)
+        for (byte[] sn : subnodes) {
             buffer.put(sn);
+        }
 
         return buffer.array();
     }
@@ -736,8 +780,9 @@ public class TrieImpl implements Trie {
 
             byte[] root = new byte[SHA3Helper.DEFAULT_SIZE_BYTES];
 
-            if (dstream.read(root) != SHA3Helper.DEFAULT_SIZE_BYTES)
+            if (dstream.read(root) != SHA3Helper.DEFAULT_SIZE_BYTES) {
                 throw new EOFException();
+            }
 
             TrieStoreImpl store = TrieStoreImpl.deserialize(bytes, Short.BYTES + SHA3Helper.DEFAULT_SIZE_BYTES, bytes.length - Short.BYTES - SHA3Helper.DEFAULT_SIZE_BYTES, new HashMapDB());
 
@@ -780,8 +825,9 @@ public class TrieImpl implements Trie {
 
             TrieImpl trie = fromMessage(bytes, messageOffset, messageLength, null);
 
-            if (trie == null)
+            if (trie == null) {
                 throw new NullPointerException();
+            }
 
             if (nsubnodes > 0) {
                 deserializeSubnodes(bytes, messageLength, messageOffset, trie);
@@ -799,12 +845,14 @@ public class TrieImpl implements Trie {
     private static void deserializeSubnodes(byte[] bytes, int messageLength, int messageOffset, TrieImpl trie) {
         int subnodeOffset = messageOffset + messageLength;
 
-        if (trie.nodes == null)
+        if (trie.nodes == null) {
             trie.nodes = new TrieImpl[trie.arity];
+        }
 
         for (int k = 0; k < trie.arity; k++) {
-            if (trie.hashes[k] == null)
+            if (trie.hashes[k] == null) {
                 continue;
+            }
 
             int subnodeLength = getSerializedNodeLength(bytes, subnodeOffset);
 
@@ -839,8 +887,9 @@ public class TrieImpl implements Trie {
      * @return
      */
     private TrieImpl getNode(int n) {
-        if (this.nodes == null)
+        if (this.nodes == null) {
             return null;
+        }
 
         return this.nodes[n];
     }
@@ -862,15 +911,18 @@ public class TrieImpl implements Trie {
         // the following code coalesces nodes if needed for delete operation
 
         // it's null or it is not a delete operation
-        if (trie == null || value != null)
+        if (trie == null || value != null) {
             return trie;
+        }
 
-        if (isEmptyTrie(trie.value, trie.nodes, trie.hashes))
+        if (isEmptyTrie(trie.value, trie.nodes, trie.hashes)) {
             return null;
+        }
 
         // only coalesce if node has only one child and no value
-        if (trie.value != null || trie.getNodeCount() !=1)
+        if (trie.value != null || trie.getNodeCount() !=1) {
             return trie;
+        }
 
         TrieImpl firstChild = null;
         int firstChildPosition = 0;
@@ -880,21 +932,25 @@ public class TrieImpl implements Trie {
             firstChild = (TrieImpl)trie.retrieveNode(k);
         }
 
-        if (firstChild == null)
+        if (firstChild == null) {
             throw new NullPointerException();
+        }
 
         byte[] trieSharedPath;
         byte[] positionPath = new byte[] { (byte) firstChildPosition };
 
-        if (trie.sharedPathLength == 0)
+        if (trie.sharedPathLength == 0) {
             trieSharedPath = positionPath;
-        else
+        }
+        else {
             trieSharedPath = ByteUtils.concatenate(decodePath(trie.encodedSharedPath, trie.arity, trie.sharedPathLength), positionPath);
+        }
 
         byte[] newSharedPath;
 
-        if (firstChild.sharedPathLength == 0)
+        if (firstChild.sharedPathLength == 0) {
             newSharedPath = trieSharedPath;
+        }
         else {
             byte[] childSharedPath = decodePath(firstChild.encodedSharedPath, firstChild.arity, firstChild.sharedPathLength);
             newSharedPath = ByteUtils.concatenate(trieSharedPath, childSharedPath);
@@ -915,18 +971,21 @@ public class TrieImpl implements Trie {
 
             int k = lengthOfCommonPath(key, length, keyPosition, sharedPath);
 
-            if (k >= sharedPath.length)
+            if (k >= sharedPath.length) {
                 position += sharedPath.length;
-            else
+            }
+            else {
                 return this.split(k).put(key, length, position, value);
+            }
         }
 
         if (position >= length) {
             TrieImpl[] newNodes = cloneNodes(false);
             byte[][] newHashes = cloneHashes();
 
-            if (isEmptyTrie(value, newNodes, newHashes))
+            if (isEmptyTrie(value, newNodes, newHashes)) {
                 return null;
+            }
 
             return new TrieImpl(this.arity, this.encodedSharedPath, this.sharedPathLength, value, newNodes, newHashes, this.store).withSecure(this.isSecure);
         }
@@ -945,18 +1004,21 @@ public class TrieImpl implements Trie {
 
         TrieImpl node = (TrieImpl)retrieveNode(pos);
 
-        if (node == null)
+        if (node == null) {
             node = new TrieImpl(this.arity, this.store, this.isSecure);
+        }
 
         node = node.put(key, length, position + 1, value);
 
         newNodes[pos] = node;
 
-        if (newHashes != null)
+        if (newHashes != null) {
             newHashes[pos] = null;
+        }
 
-        if (isEmptyTrie(value, newNodes, newHashes))
+        if (isEmptyTrie(value, newNodes, newHashes)) {
             return null;
+        }
 
         return new TrieImpl(this.arity, this.encodedSharedPath, this.sharedPathLength, this.value, newNodes, newHashes, this.store).withSecure(this.isSecure);
     }
@@ -965,8 +1027,9 @@ public class TrieImpl implements Trie {
         int k;
 
         for (k = 0; k < sharedPath.length && position + k < length; k++) {
-            if (sharedPath[k] != key[position + k])
+            if (sharedPath[k] != key[position + k]) {
                 break;
+            }
         }
 
         return k;
@@ -1011,14 +1074,16 @@ public class TrieImpl implements Trie {
      */
     @Nullable
     private byte[][] cloneHashes() {
-        if (this.hashes == null)
+        if (this.hashes == null) {
             return null;
+        }
 
         int nhashes = this.hashes.length;
         byte[][] newHashes = new byte[nhashes][];
 
-        for (int k = 0; k < nhashes; k++)
+        for (int k = 0; k < nhashes; k++) {
             newHashes[k] = this.hashes[k];
+        }
 
         return newHashes;
     }
@@ -1032,14 +1097,17 @@ public class TrieImpl implements Trie {
      */
     @Nullable
     private TrieImpl[] cloneNodes(boolean create) {
-        if (nodes == null && !create)
+        if (nodes == null && !create) {
             return null;
+        }
 
         TrieImpl[] newnodes = new TrieImpl[this.arity];
 
-        if (nodes != null)
-            for (int k = 0; k < this.arity; k++)
+        if (nodes != null) {
+            for (int k = 0; k < this.arity; k++) {
                 newnodes[k] = nodes[k];
+            }
+        }
 
         return newnodes;
     }
@@ -1059,19 +1127,24 @@ public class TrieImpl implements Trie {
      * @return true if no data
      */
     private static boolean isEmptyTrie(byte[] value, TrieImpl[] nodes, byte[][]hashes) {
-        if (value != null && value.length != 0)
+        if (value != null && value.length != 0) {
             return false;
+        }
 
         if (nodes != null) {
-            for (int k = 0; k < nodes.length; k++)
-                if (nodes[k] != null)
+            for (int k = 0; k < nodes.length; k++) {
+                if (nodes[k] != null) {
                     return false;
+                }
+            }
         }
 
         if (hashes != null) {
-            for (int k = 0; k < hashes.length; k++)
-                if (hashes[k] != null)
+            for (int k = 0; k < hashes.length; k++) {
+                if (hashes[k] != null) {
                     return false;
+                }
+            }
         }
 
         return true;
@@ -1112,8 +1185,9 @@ public class TrieImpl implements Trie {
         for (int k = 0; k < l; k++) {
             byte b = bytes[k];
 
-            for (int i = 0; i < factor; i++)
+            for (int i = 0; i < factor; i++) {
                 keyBytes[j++] = (byte) ((b >> (nbits * (factor - i - 1))) & mask);
+            }
         }
 
         return keyBytes;
@@ -1122,9 +1196,9 @@ public class TrieImpl implements Trie {
     public Trie getSnapshotTo(byte[] hash) {
         this.save();
 
-        if (Arrays.equals(emptyHash, hash))
+        if (Arrays.equals(emptyHash, hash)) {
             return new TrieImpl(this.store, this.isSecure);
-
+        }
 
         Trie newTrie = this.store.retrieve(hash);
 
@@ -1157,11 +1231,13 @@ public class TrieImpl implements Trie {
     public byte[] getValue() { return this.value; }
 
     private static int getEncodedPathLength(int length, int arity) {
-        if (arity == 2)
+        if (arity == 2) {
             return length / 8 + (length % 8 == 0 ? 0 : 1);
+        }
 
-        if (arity == 16)
+        if (arity == 16) {
             return length / 2 + (length % 2 == 0 ? 0 : 1);
+        }
 
         return 0;
     }
@@ -1169,14 +1245,17 @@ public class TrieImpl implements Trie {
     @VisibleForTesting
     @Nonnull
     public static byte[] encodePath(byte[] path, int arity) {
-        if (path == null)
+        if (path == null) {
             throw new IllegalArgumentException("path");
+        }
 
-        if (arity == 2)
+        if (arity == 2) {
             return encodeBinaryPath(path);
+        }
 
-        if (arity == 16)
+        if (arity == 16) {
             return encodeHexadecimalPath(path);
+        }
 
         throw new IllegalArgumentException(INVALID_ARITY);
     }
@@ -1184,13 +1263,17 @@ public class TrieImpl implements Trie {
     @VisibleForTesting
     @Nonnull
     public static byte[] decodePath(byte[] encoded, int arity, int length) {
-        if (encoded == null)
+        if (encoded == null) {
             throw new IllegalArgumentException("encoded");
+        }
 
-        if (arity == 2)
+        if (arity == 2) {
             return decodeBinaryPath(encoded, length);
-        if (arity == 16)
+        }
+
+        if (arity == 16) {
             return decodeHexadecimalPath(encoded, length);
+        }
 
         throw new IllegalArgumentException(INVALID_ARITY);
     }
@@ -1205,10 +1288,15 @@ public class TrieImpl implements Trie {
 
         for (int k = 0; k < lpath; k++) {
             int offset = k % 8;
-            if (k > 0 && offset == 0)
+
+            if (k > 0 && offset == 0) {
                 nbyte++;
-            if (path[k] == 0)
+            }
+
+            if (path[k] == 0) {
                 continue;
+            }
+
             encoded[nbyte] |= 0x80 >> offset;
         }
 
@@ -1223,8 +1311,9 @@ public class TrieImpl implements Trie {
             int nbyte = k / 8;
             int offset = k % 8;
 
-            if (((encoded[nbyte] >> (7 - offset)) & 0x01) != 0)
+            if (((encoded[nbyte] >> (7 - offset)) & 0x01) != 0) {
                 path[k] = 1;
+            }
         }
 
         return path;
@@ -1238,10 +1327,14 @@ public class TrieImpl implements Trie {
         int nbyte = 0;
 
         for (int k = 0; k < lpath; k++) {
-            if (k > 0 && k % 2 == 0)
+            if (k > 0 && k % 2 == 0) {
                 nbyte++;
-            if (path[k] == 0)
+            }
+
+            if (path[k] == 0) {
                 continue;
+            }
+
             int offset = k % 2;
             encoded[nbyte] |= (path[k] & 0x0f) << ((1 - offset) * 4);
         }
