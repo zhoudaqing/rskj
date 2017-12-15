@@ -333,7 +333,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     }
 
     private BridgeSupport setup() throws Exception {
-        return new BridgeSupport(repository, contractAddress, rskExecutionBlock, rskReceiptStore, rskBlockStore, bridgeConstants, logs);
+        return new BridgeSupport(repository, contractAddress, rskExecutionBlock, bridgeConstants, logs);
     }
 
     private void teardown() throws IOException {
