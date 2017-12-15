@@ -81,6 +81,7 @@ public class BridgeStorageProvider {
     private ABICallElection federationElection;
 
     private LockWhitelist lockWhitelist;
+    private Coin feePerKb;
 
     public BridgeStorageProvider(Repository repository, String contractAddress, BridgeConstants bridgeConstants) {
         this.repository = repository;
@@ -318,6 +319,23 @@ public class BridgeStorageProvider {
         return lockWhitelist;
     }
 
+    public Coin getFeePerKb() {
+        if (feePerKb != null) {
+            return feePerKb;
+        }
+
+        feePerKb = safeGetFromRepository(FEE_PER_KB_KEY, BridgeSerializationUtils::deserializeCoin);
+        return feePerKb;
+    }
+
+    public void saveFeePerKb() throws IOException {
+        if (feePerKb == null) {
+            return;
+        }
+
+        safeSaveToRepository(FEE_PER_KB_KEY, feePerKb, BridgeSerializationUtils::serializeCoin);
+    }
+
     public void save() throws IOException {
         saveBtcTxHashesAlreadyProcessed();
 
@@ -336,6 +354,7 @@ public class BridgeStorageProvider {
         saveFederationElection();
 
         saveLockWhitelist();
+        saveFeePerKb();
     }
 
     private <T> T safeGetFromRepository(DataWord keyAddress, RepositoryDeserializer<T> deserializer) {

@@ -304,6 +304,19 @@ public class BridgeSerializationUtils {
         return new LockWhitelist(deserializeBtcAddresses(data, parameters));
     }
 
+    public static byte[] serializeCoin(Coin coin) {
+        return RLP.encodeBigInteger(BigInteger.valueOf(coin.getValue()));
+    }
+
+    public static Coin deserializeCoin(byte[] data) {
+        if (data == null || data.length == 0) {
+            return Coin.ZERO;
+        }
+
+        long amount = RLP.decodeBigInteger(data, 0).longValue();
+        return Coin.valueOf(amount);
+    }
+
     // A ReleaseRequestQueue is serialized as follows:
     // [address_1, amount_1, ..., address_n, amount_n]
     // with address_i being the encoded bytes of each btc address

@@ -148,6 +148,18 @@ public class BridgeSupportTest {
     }
 
     @Test
+    public void feePerKbFromStorageProvider() throws Exception {
+        Repository repository = new RepositoryImpl();
+        Repository track = repository.startTracking();
+
+        BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
+        BridgeSupport bridgeSupport = new BridgeSupport(track, PrecompiledContracts.BRIDGE_ADDR, provider, null, BridgeRegTestConstants.getInstance(), Collections.emptyList());
+
+        Coin expected = Coin.MILLICOIN;
+        Assert.assertEquals(expected, bridgeSupport.getFeePerKb());
+    }
+
+    @Test
     public void testGetBtcBlockchainBlockLocatorWithoutBtcCheckpoints() throws Exception {
         BlockchainNetConfig blockchainNetConfigOriginal = RskSystemProperties.CONFIG.getBlockchainConfig();
         RskSystemProperties.CONFIG.setBlockchainConfig(new RegTestConfig());

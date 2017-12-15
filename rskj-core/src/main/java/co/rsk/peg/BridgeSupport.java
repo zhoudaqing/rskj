@@ -415,8 +415,11 @@ public class BridgeSupport {
         return true;
     }
 
-    private Coin getFeePerKb() {
-        return Coin.MILLICOIN;
+    /**
+     * @return Current fee per kb in BTC.
+     */
+    public Coin getFeePerKb() {
+        return provider.getFeePerKb();
     }
 
     /**

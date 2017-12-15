@@ -100,6 +100,7 @@ public class BridgeStorageProviderTest {
         provider0.getRskTxsWaitingForSignatures();
         provider0.getActiveFederationBtcUTXOs();
         provider0.getRetiringFederationBtcUTXOs();
+        provider0.getFeePerKb();
         provider0.save();
         track.commit();
 
@@ -114,6 +115,7 @@ public class BridgeStorageProviderTest {
         Assert.assertNotNull(repository.getStorageBytes(contractAddress, new DataWord("rskTxsWaitingFS".getBytes())));
         Assert.assertNotNull(repository.getStorageBytes(contractAddress, new DataWord("activeFederationBtcUTXOs".getBytes())));
         Assert.assertNotNull(repository.getStorageBytes(contractAddress, new DataWord("retiringFederationBtcUTXOs".getBytes())));
+        Assert.assertNotNull(repository.getStorageBytes(contractAddress, new DataWord("feePerKb".getBytes())));
 
         BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBridgeConstants());
 
@@ -146,6 +148,11 @@ public class BridgeStorageProviderTest {
 
         Assert.assertNotNull(retiringUtxos);
         Assert.assertTrue(retiringUtxos.isEmpty());
+
+        Coin feePerKb = provider.getFeePerKb();
+
+        Assert.assertNotNull(feePerKb);
+        Assert.assertEquals(Coin.ZERO, feePerKb);
     }
 
     @Test
