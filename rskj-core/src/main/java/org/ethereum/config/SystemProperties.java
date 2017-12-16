@@ -549,7 +549,6 @@ public abstract class SystemProperties {
         return configFromFiles.getInt("peer.listen.port");
     }
 
-
     /**
      * This can be a blocking call with long timeout (thus no ValidateMe)
      */
@@ -567,9 +566,6 @@ public abstract class SystemProperties {
         return bindIp;
     }
 
-    /**
-     * This can be a blocking call with long timeout (thus no ValidateMe)
-     */
     public synchronized String getExternalIp() {
         if (externalIp != null) {
             return externalIp;
@@ -606,7 +602,8 @@ public abstract class SystemProperties {
             tryParseIpOrThrow();
             logger.info("External address identified: {}", externalIp);
         } catch (IOException e) {
-            logger.warn("Can't get external IP. " + e);
+            logger.error("Can't get external IP. " + e);
+            externalIp = bindIp;
         }
         return externalIp;
     }
