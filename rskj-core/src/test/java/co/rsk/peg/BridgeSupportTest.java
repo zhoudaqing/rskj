@@ -46,7 +46,6 @@ import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.crypto.SHA3Helper;
 import org.ethereum.db.ReceiptStore;
-import org.ethereum.db.TransactionInfo;
 import org.ethereum.util.RLP;
 import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.PrecompiledContracts;
@@ -71,7 +70,6 @@ import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.security.DigestOutputStream;
 import java.security.MessageDigest;
-import java.security.SecureRandom;
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -278,7 +276,7 @@ public class BridgeSupportTest {
         provider0.getReleaseRequestQueue().add(new BtcECKey().toAddress(btcParams), Coin.valueOf(20,0));
         provider0.getReleaseRequestQueue().add(new BtcECKey().toAddress(btcParams), Coin.valueOf(10,0));
 
-        provider0.getActiveFederationBtcUTXOs().add(new UTXO(
+        provider0.getNewFederationBtcUTXOs().add(new UTXO(
                 PegTestUtils.createHash(),
                 1,
                 Coin.valueOf(12,0),
@@ -320,7 +318,7 @@ public class BridgeSupportTest {
         // Check value sent to user is 10 BTC minus fee
         Assert.assertEquals(Coin.valueOf(999962800l), provider.getReleaseTransactionSet().getEntries().iterator().next().getTransaction().getOutput(0).getValue());
         // Check the wallet has been emptied
-        Assert.assertTrue(provider.getActiveFederationBtcUTXOs().isEmpty());
+        Assert.assertTrue(provider.getNewFederationBtcUTXOs().isEmpty());
     }
 
     @Test
@@ -334,7 +332,7 @@ public class BridgeSupportTest {
         BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR);
 
         provider0.getReleaseRequestQueue().add(new BtcECKey().toAddress(btcParams), Coin.valueOf(37500));
-        provider0.getActiveFederationBtcUTXOs().add(new UTXO(
+        provider0.getNewFederationBtcUTXOs().add(new UTXO(
                 PegTestUtils.createHash(),
                 1,
                 Coin.valueOf(1000000),
@@ -377,7 +375,7 @@ public class BridgeSupportTest {
         Assert.assertEquals(0, provider.getReleaseTransactionSet().getEntries().size());
         Assert.assertEquals(0, provider.getRskTxsWaitingForSignatures().size());
         // Check the wallet has not been emptied
-        Assert.assertFalse(provider.getActiveFederationBtcUTXOs().isEmpty());
+        Assert.assertFalse(provider.getNewFederationBtcUTXOs().isEmpty());
     }
 
     @Test
@@ -392,7 +390,7 @@ public class BridgeSupportTest {
 
         provider0.getReleaseRequestQueue().add(new BtcECKey().toAddress(btcParams), Coin.COIN.multiply(7));
         for (int i = 0; i < 2000; i++) {
-            provider0.getActiveFederationBtcUTXOs().add(new UTXO(
+            provider0.getNewFederationBtcUTXOs().add(new UTXO(
                     PegTestUtils.createHash(),
                     1,
                     Coin.CENT,
@@ -435,7 +433,7 @@ public class BridgeSupportTest {
         Assert.assertEquals(0, provider.getReleaseTransactionSet().getEntries().size());
         Assert.assertEquals(0, provider.getRskTxsWaitingForSignatures().size());
         // Check the wallet has not been emptied
-        Assert.assertFalse(provider.getActiveFederationBtcUTXOs().isEmpty());
+        Assert.assertFalse(provider.getNewFederationBtcUTXOs().isEmpty());
     }
 
     @Test
@@ -467,7 +465,7 @@ public class BridgeSupportTest {
         BridgeStorageProvider provider0 = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR);
 
         provider0.getReleaseRequestQueue().add(new BtcECKey().toAddress(btcParams), Coin.COIN);
-        provider0.getActiveFederationBtcUTXOs().add(new UTXO(PegTestUtils.createHash(), 1, Coin.COIN.add(Coin.valueOf(100)), 0, false, ScriptBuilder.createOutputScript(federation.getAddress())));
+        provider0.getNewFederationBtcUTXOs().add(new UTXO(PegTestUtils.createHash(), 1, Coin.COIN.add(Coin.valueOf(100)), 0, false, ScriptBuilder.createOutputScript(federation.getAddress())));
 
         provider0.save();
 
@@ -492,7 +490,7 @@ public class BridgeSupportTest {
         Assert.assertEquals(Denomination.satoshisToWeis(BigInteger.valueOf(21000000-2600)), repository.getBalance(Hex.decode(PrecompiledContracts.BRIDGE_ADDR)));
         Assert.assertEquals(Denomination.satoshisToWeis(BigInteger.valueOf(2600)), repository.getBalance(RskSystemProperties.CONFIG.getBlockchainConfig().getCommonConstants().getBurnAddress()));
         // Check the wallet has been emptied
-        Assert.assertTrue(provider.getActiveFederationBtcUTXOs().isEmpty());
+        Assert.assertTrue(provider.getNewFederationBtcUTXOs().isEmpty());
     }
 
     @PrepareForTest({ BridgeUtils.class })
@@ -715,8 +713,6 @@ public class BridgeSupportTest {
         BtcTransaction prevTx = new BtcTransaction(btcParams);
         TransactionOutput prevOut = new TransactionOutput(btcParams, prevTx, Coin.FIFTY_COINS, federation.getAddress());
         prevTx.addOutput(prevOut);
-//        UTXO utxo = new UTXO(prevTx.getHash(), 0, prevOut.getValue(), 0, false, prevOut.getScriptPubKey());
-//        provider.getActiveFederationBtcUTXOs().add(utxo);
 
         BtcTransaction t = new BtcTransaction(btcParams);
         TransactionOutput output = new TransactionOutput(btcParams, t, Coin.COIN, new BtcECKey().toAddress(btcParams));
@@ -890,7 +886,7 @@ public class BridgeSupportTest {
 
         BridgeStorageProvider provider2 = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR);
 
-        Assert.assertTrue(provider2.getActiveFederationBtcUTXOs().isEmpty());
+        Assert.assertTrue(provider2.getNewFederationBtcUTXOs().isEmpty());
         Assert.assertEquals(0, provider2.getReleaseRequestQueue().getEntries().size());
         Assert.assertEquals(0, provider2.getReleaseTransactionSet().getEntries().size());
         Assert.assertTrue(provider2.getRskTxsWaitingForSignatures().isEmpty());
@@ -921,7 +917,7 @@ public class BridgeSupportTest {
 
         BridgeStorageProvider provider2 = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR);
 
-        Assert.assertTrue(provider2.getActiveFederationBtcUTXOs().isEmpty());
+        Assert.assertTrue(provider2.getNewFederationBtcUTXOs().isEmpty());
         Assert.assertEquals(0, provider2.getReleaseRequestQueue().getEntries().size());
         Assert.assertEquals(0, provider2.getReleaseTransactionSet().getEntries().size());
         Assert.assertTrue(provider2.getRskTxsWaitingForSignatures().isEmpty());
@@ -952,7 +948,7 @@ public class BridgeSupportTest {
 
         BridgeStorageProvider provider2 = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR);
 
-        Assert.assertTrue(provider2.getActiveFederationBtcUTXOs().isEmpty());
+        Assert.assertTrue(provider2.getNewFederationBtcUTXOs().isEmpty());
         Assert.assertEquals(0, provider2.getReleaseRequestQueue().getEntries().size());
         Assert.assertEquals(0, provider2.getReleaseTransactionSet().getEntries().size());
         Assert.assertTrue(provider2.getRskTxsWaitingForSignatures().isEmpty());
@@ -987,7 +983,7 @@ public class BridgeSupportTest {
 
         BridgeStorageProvider provider2 = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR);
 
-        Assert.assertTrue(provider2.getActiveFederationBtcUTXOs().isEmpty());
+        Assert.assertTrue(provider2.getNewFederationBtcUTXOs().isEmpty());
         Assert.assertEquals(0, provider2.getReleaseRequestQueue().getEntries().size());
         Assert.assertEquals(0, provider2.getReleaseTransactionSet().getEntries().size());
         Assert.assertTrue(provider2.getRskTxsWaitingForSignatures().isEmpty());
@@ -1037,7 +1033,7 @@ public class BridgeSupportTest {
 
         BridgeStorageProvider provider2 = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR);
 
-        Assert.assertEquals(0, provider2.getActiveFederationBtcUTXOs().size());
+        Assert.assertEquals(0, provider2.getNewFederationBtcUTXOs().size());
 
         Assert.assertEquals(0, provider2.getReleaseRequestQueue().getEntries().size());
         Assert.assertEquals(0, provider2.getReleaseTransactionSet().getEntries().size());
@@ -1119,8 +1115,8 @@ public class BridgeSupportTest {
 
         BridgeStorageProvider provider2 = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR);
 
-        Assert.assertEquals(1, provider2.getActiveFederationBtcUTXOs().size());
-        Assert.assertEquals(Coin.COIN, provider2.getActiveFederationBtcUTXOs().get(0).getValue());
+        Assert.assertEquals(1, provider2.getNewFederationBtcUTXOs().size());
+        Assert.assertEquals(Coin.COIN, provider2.getNewFederationBtcUTXOs().get(0).getValue());
 
         Assert.assertEquals(0, provider2.getReleaseRequestQueue().getEntries().size());
         Assert.assertEquals(0, provider2.getReleaseTransactionSet().getEntries().size());
@@ -1186,8 +1182,8 @@ public class BridgeSupportTest {
         BtcBlockChain btcBlockChain = new SimpleBlockChain(btcContext, btcBlockStore);
 
         BridgeStorageProvider provider = new BridgeStorageProvider(track, contractAddress);
-        provider.setActiveFederation(activeFederation);
-        provider.setRetiringFederation(retiringFederation);
+        provider.setNewFederation(activeFederation);
+        provider.setOldFederation(retiringFederation);
         BridgeSupport bridgeSupport = new BridgeSupport(track, contractAddress, provider, btcBlockStore, btcBlockChain);
         Whitebox.setInternalState(bridgeSupport, "rskExecutionBlock", executionBlock);
 
@@ -1210,7 +1206,7 @@ public class BridgeSupportTest {
 
         track.commit();
 
-        List<UTXO> activeFederationBtcUTXOs = provider.getActiveFederationBtcUTXOs();
+        List<UTXO> activeFederationBtcUTXOs = provider.getNewFederationBtcUTXOs();
         List<Coin> activeFederationBtcCoins = activeFederationBtcUTXOs.stream().map(UTXO::getValue).collect(Collectors.toList());
         Assert.assertThat(activeFederationBtcUTXOs, hasSize(1));
         Assert.assertThat(activeFederationBtcCoins, hasItem(Coin.COIN));
@@ -1268,8 +1264,8 @@ public class BridgeSupportTest {
         BtcBlockChain btcBlockChain = new SimpleBlockChain(btcContext, btcBlockStore);
 
         BridgeStorageProvider provider = new BridgeStorageProvider(track, contractAddress);
-        provider.setActiveFederation(federation1);
-        provider.setRetiringFederation(federation2);
+        provider.setNewFederation(federation1);
+        provider.setOldFederation(federation2);
 
         // Whitelist the addresses
         LockWhitelist whitelist = provider.getLockWhitelist();
@@ -1320,12 +1316,12 @@ public class BridgeSupportTest {
 
         BridgeStorageProvider provider2 = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR);
 
-        Assert.assertEquals(2, provider2.getActiveFederationBtcUTXOs().size());
-        Assert.assertEquals(2, provider2.getRetiringFederationBtcUTXOs().size());
-        Assert.assertEquals(Coin.COIN.multiply(5), provider2.getActiveFederationBtcUTXOs().get(0).getValue());
-        Assert.assertEquals(Coin.COIN.multiply(2), provider2.getActiveFederationBtcUTXOs().get(1).getValue());
-        Assert.assertEquals(Coin.COIN.multiply(10), provider2.getRetiringFederationBtcUTXOs().get(0).getValue());
-        Assert.assertEquals(Coin.COIN.multiply(3), provider2.getRetiringFederationBtcUTXOs().get(1).getValue());
+        Assert.assertEquals(2, provider2.getNewFederationBtcUTXOs().size());
+        Assert.assertEquals(2, provider2.getOldFederationBtcUTXOs().size());
+        Assert.assertEquals(Coin.COIN.multiply(5), provider2.getNewFederationBtcUTXOs().get(0).getValue());
+        Assert.assertEquals(Coin.COIN.multiply(2), provider2.getNewFederationBtcUTXOs().get(1).getValue());
+        Assert.assertEquals(Coin.COIN.multiply(10), provider2.getOldFederationBtcUTXOs().get(0).getValue());
+        Assert.assertEquals(Coin.COIN.multiply(3), provider2.getOldFederationBtcUTXOs().get(1).getValue());
 
         Assert.assertEquals(0, provider2.getReleaseRequestQueue().getEntries().size());
         Assert.assertEquals(0, provider2.getReleaseTransactionSet().getEntries().size());
@@ -1385,8 +1381,8 @@ public class BridgeSupportTest {
         BtcBlockChain btcBlockChain = new SimpleBlockChain(btcContext, btcBlockStore);
 
         BridgeStorageProvider provider = new BridgeStorageProvider(track, contractAddress);
-        provider.setActiveFederation(federation1);
-        provider.setRetiringFederation(federation2);
+        provider.setNewFederation(federation1);
+        provider.setOldFederation(federation2);
 
         BridgeSupport bridgeSupport = new BridgeSupport(track, contractAddress, provider, btcBlockStore, btcBlockChain);
         Whitebox.setInternalState(bridgeSupport, "rskExecutionBlock", executionBlock);
@@ -1429,12 +1425,12 @@ public class BridgeSupportTest {
 
         BridgeStorageProvider provider2 = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR);
 
-        Assert.assertEquals(2, provider2.getActiveFederationBtcUTXOs().size());
-        Assert.assertEquals(2, provider2.getRetiringFederationBtcUTXOs().size());
-        Assert.assertEquals(Coin.COIN.multiply(5), provider2.getActiveFederationBtcUTXOs().get(0).getValue());
-        Assert.assertEquals(Coin.COIN.multiply(3), provider2.getActiveFederationBtcUTXOs().get(1).getValue());
-        Assert.assertEquals(Coin.COIN.multiply(10), provider2.getRetiringFederationBtcUTXOs().get(0).getValue());
-        Assert.assertEquals(Coin.COIN.multiply(4), provider2.getRetiringFederationBtcUTXOs().get(1).getValue());
+        Assert.assertEquals(2, provider2.getNewFederationBtcUTXOs().size());
+        Assert.assertEquals(2, provider2.getOldFederationBtcUTXOs().size());
+        Assert.assertEquals(Coin.COIN.multiply(5), provider2.getNewFederationBtcUTXOs().get(0).getValue());
+        Assert.assertEquals(Coin.COIN.multiply(3), provider2.getNewFederationBtcUTXOs().get(1).getValue());
+        Assert.assertEquals(Coin.COIN.multiply(10), provider2.getOldFederationBtcUTXOs().get(0).getValue());
+        Assert.assertEquals(Coin.COIN.multiply(4), provider2.getOldFederationBtcUTXOs().get(1).getValue());
 
         Assert.assertEquals(0, provider2.getReleaseTransactionSet().getEntries().size());
 
@@ -1750,7 +1746,7 @@ public class BridgeSupportTest {
                 mocksProvider.getElection(),
                 null
         );
-        ((BridgeStorageProvider) Whitebox.getInternalState(bridgeSupport, "provider")).getRetiringFederationBtcUTXOs().add(mock(UTXO.class));
+        ((BridgeStorageProvider) Whitebox.getInternalState(bridgeSupport, "provider")).getOldFederationBtcUTXOs().add(mock(UTXO.class));
 
         Assert.assertNull(bridgeSupport.getPendingFederationHash());
         Assert.assertEquals(-2, mocksProvider.execute(bridgeSupport));
@@ -1998,11 +1994,11 @@ public class BridgeSupportTest {
             UTXO utxoMock = mock(UTXO.class);
             when(utxoMock.getIndex()).thenReturn((long)i);
             when(utxoMock.getValue()).thenReturn(Coin.valueOf((i+1)*1000));
-            provider.getActiveFederationBtcUTXOs().add(utxoMock);
+            provider.getNewFederationBtcUTXOs().add(utxoMock);
         }
 
         // Currently active federation
-        Federation oldActiveFederation = provider.getActiveFederation();
+        Federation oldActiveFederation = provider.getNewFederation();
 
         // Vote with no winner
         Assert.assertNotNull(provider.getPendingFederation());
@@ -2015,17 +2011,17 @@ public class BridgeSupportTest {
 
         Assert.assertNull(provider.getPendingFederation());
 
-        Federation retiringFederation = provider.getRetiringFederation();
-        Federation activeFederation = provider.getActiveFederation();
+        Federation retiringFederation = provider.getOldFederation();
+        Federation activeFederation = provider.getNewFederation();
 
         Assert.assertEquals(expectedFederation, activeFederation);
         Assert.assertEquals(retiringFederation, oldActiveFederation);
 
-        Assert.assertEquals(0, provider.getActiveFederationBtcUTXOs().size());
-        Assert.assertEquals(5, provider.getRetiringFederationBtcUTXOs().size());
+        Assert.assertEquals(0, provider.getNewFederationBtcUTXOs().size());
+        Assert.assertEquals(5, provider.getOldFederationBtcUTXOs().size());
         for (int i = 0; i < 5; i++) {
-            Assert.assertEquals((long) i, provider.getRetiringFederationBtcUTXOs().get(i).getIndex());
-            Assert.assertEquals(Coin.valueOf((i+1)*1000), provider.getRetiringFederationBtcUTXOs().get(i).getValue());
+            Assert.assertEquals((long) i, provider.getOldFederationBtcUTXOs().get(i).getIndex());
+            Assert.assertEquals(Coin.valueOf((i+1)*1000), provider.getOldFederationBtcUTXOs().get(i).getValue());
         }
         verify(mocksProvider.getElection(), times(1)).clearWinners();
         verify(mocksProvider.getElection(), times(1)).clear();
@@ -2130,7 +2126,7 @@ public class BridgeSupportTest {
         Context expectedContext = mock(Context.class);
         Whitebox.setInternalState(bridgeSupport, "btcContext", expectedContext);
         BridgeStorageProvider provider = (BridgeStorageProvider) Whitebox.getInternalState(bridgeSupport, "provider");
-        Object expectedUtxos = provider.getActiveFederationBtcUTXOs();
+        Object expectedUtxos = provider.getNewFederationBtcUTXOs();
 
         final Wallet expectedWallet = mock(Wallet.class);
         PowerMockito.mockStatic(BridgeUtils.class);
@@ -2163,7 +2159,7 @@ public class BridgeSupportTest {
         Context expectedContext = mock(Context.class);
         Whitebox.setInternalState(bridgeSupport, "btcContext", expectedContext);
         BridgeStorageProvider provider = (BridgeStorageProvider) Whitebox.getInternalState(bridgeSupport, "provider");
-        Object expectedUtxos = provider.getRetiringFederationBtcUTXOs();
+        Object expectedUtxos = provider.getOldFederationBtcUTXOs();
 
         final Wallet expectedWallet = mock(Wallet.class);
         PowerMockito.mockStatic(BridgeUtils.class);
@@ -2376,13 +2372,13 @@ public class BridgeSupportTest {
 
         BridgeStorageProvider providerMock = mock(BridgeStorageProvider.class);
 
-        when(providerMock.getRetiringFederationBtcUTXOs()).then((InvocationOnMock m) -> holder.retiringUTXOs);
-        when(providerMock.getActiveFederationBtcUTXOs()).then((InvocationOnMock m) -> holder.activeUTXOs);
+        when(providerMock.getOldFederationBtcUTXOs()).then((InvocationOnMock m) -> holder.retiringUTXOs);
+        when(providerMock.getNewFederationBtcUTXOs()).then((InvocationOnMock m) -> holder.activeUTXOs);
 
         holder.setActiveFederation(genesis ? null : mockedActiveFederation);
         holder.setRetiringFederation(mockedRetiringFederation);
-        when(providerMock.getActiveFederation()).then((InvocationOnMock m) -> holder.getActiveFederation());
-        when(providerMock.getRetiringFederation()).then((InvocationOnMock m) -> holder.getRetiringFederation());
+        when(providerMock.getNewFederation()).then((InvocationOnMock m) -> holder.getActiveFederation());
+        when(providerMock.getOldFederation()).then((InvocationOnMock m) -> holder.getRetiringFederation());
         when(providerMock.getPendingFederation()).then((InvocationOnMock m) -> holder.getPendingFederation());
         when(providerMock.getFederationElection(any())).then((InvocationOnMock m) -> {
             if (mockedFederationElection != null) {
@@ -2399,11 +2395,11 @@ public class BridgeSupportTest {
         Mockito.doAnswer((InvocationOnMock m) -> {
             holder.setActiveFederation(m.getArgumentAt(0, Federation.class));
             return null;
-        }).when(providerMock).setActiveFederation(any());
+        }).when(providerMock).setNewFederation(any());
         Mockito.doAnswer((InvocationOnMock m) -> {
             holder.setRetiringFederation(m.getArgumentAt(0, Federation.class));
             return null;
-        }).when(providerMock).setRetiringFederation(any());
+        }).when(providerMock).setOldFederation(any());
         Mockito.doAnswer((InvocationOnMock m) -> {
             holder.setPendingFederation(m.getArgumentAt(0, PendingFederation.class));
             return null;
